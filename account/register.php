@@ -7,7 +7,6 @@ require_once '../classes/peer_tutoring_trackerDB.php';
 
 $error = "";
 
-// ── Fetch all predefined subjects for the checkbox list ───────
 $subj_stmt = $conn->prepare("SELECT subject_id, subject_name FROM subjects ORDER BY subject_name ASC");
 $subj_stmt->execute();
 $all_subjects = $subj_stmt->fetchAll();
@@ -22,14 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password    = $_POST['password'];
     $confirm_pw  = $_POST['confirm_password'];
 
-    // Year level only applies to students
     $year_level = ($role == 'student') ? (int)$_POST['year_level'] : null;
 
-    // Subjects only apply to tutors
     $selected_subjects = ($role == 'tutor' && isset($_POST['subjects'])) ? $_POST['subjects'] : [];
     $other_subject     = ($role == 'tutor') ? trim($_POST['other_subject'] ?? '') : '';
 
-    // ── Validation ────────────────────────────────────────────
+    //Validation 
     if (empty($first_name) || empty($middle_name) || empty($last_name)) {
         $error = "First, middle, and last name are required.";
     } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -51,8 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($check->rowCount() > 0) {
             $error = "An account with that email already exists.";
         } else {
-
-            // ── Insert user ───────────────────────────────────
             $hashed_pw = password_hash($password, PASSWORD_BCRYPT);
             $full_name = $first_name . " " . $last_name;
 
@@ -63,35 +58,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->execute([$first_name, $middle_name, $last_name, $email, $hashed_pw, $role, $year_level]);
             $new_user_id = $conn->lastInsertId();
 
-            // ── Handle subjects for tutors ────────────────────
             if ($role == 'tutor') {
 
-                // Handle "Other" subject — check duplicate (case-insensitive), insert if new
                 if ($other_subject != '') {
                     $dup = $conn->prepare("SELECT subject_id FROM subjects WHERE LOWER(subject_name) = LOWER(?)");
                     $dup->execute([$other_subject]);
                     $existing = $dup->fetch();
 
                     if ($existing) {
-                        // Already exists — just use that subject_id
                         $selected_subjects[] = $existing['subject_id'];
                     } else {
-                        // New subject — title case it, insert it
                         $clean_name = ucwords(strtolower($other_subject));
                         $ins = $conn->prepare("INSERT INTO subjects (subject_name) VALUES (?)");
                         $ins->execute([$clean_name]);
                         $selected_subjects[] = $conn->lastInsertId();
                     }
                 }
-
-                // Link all selected subjects to this tutor
                 $link = $conn->prepare("INSERT IGNORE INTO tutor_subjects (tutor_id, subject_id) VALUES (?, ?)");
                 foreach ($selected_subjects as $subject_id) {
                     $link->execute([$new_user_id, (int)$subject_id]);
                 }
             }
 
-            // ── Send verification email ───────────────────────
+            //Send verification email
             require_once '../classes/PHPMailer/src/PHPMailer.php';
             require_once '../classes/PHPMailer/src/SMTP.php';
             require_once '../classes/PHPMailer/src/Exception.php';
@@ -108,8 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $mail->isSMTP();
                 $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'peerturoring@gmail.com'; // <-- change this
-                $mail->Password   = 'pcdslgglcturvuwj';    // <-- change this
+                $mail->Username   = 'peerturoring@gmail.com'; 
+                $mail->Password   = 'pcdslgglcturvuwj';   
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
@@ -131,7 +120,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $mail->AltBody = "Verify your email here: $verify_link";
                 $mail->send();
             } catch (Exception $e) {
-                // Email failed but account was created — still redirect to pending page
             }
 
             header("Location: ../account/verify_pending.php");
@@ -151,7 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
 
-  <!-- Left branding panel -->
   <aside class="panel-left" style="background-image: url('../assets/images/image.jpeg');">
     <div class="brand">
       <h1>Peer Tutoring<br>Tracker</h1>
@@ -181,7 +168,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="panel-left-footer">© <?php echo date('Y'); ?> Peer Tutoring Tracker. All rights reserved.</div>
   </aside>
 
-  <!-- Right form panel -->
   <main class="panel-right">
     <div class="form-card">
 
@@ -194,7 +180,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="alert error show"><?php echo $error; ?></div>
       <?php } ?>
 
-      <!-- Role selector -->
       <div class="role-selector">
         <div class="role-option">
           <input type="radio" name="role_display" id="role-student" value="student"
@@ -218,7 +203,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="hidden" name="role" id="hiddenRole"
           value="<?php echo (isset($_POST['role']) && $_POST['role'] == 'tutor') ? 'tutor' : 'student'; ?>">
 
-        <!-- Name row -->
         <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
           <div class="field">
             <label for="first_name">First Name</label>
@@ -349,7 +333,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       });
     });
 
-    // Toggle "Other" subject input
     function toggleOther(cb) {
       var wrap = document.getElementById('otherWrap');
       if (cb.checked) {
@@ -362,7 +345,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       }
     }
 
-    // Real-time duplicate check on "Other" input
     var otherInput = document.getElementById('other_subject');
     if (otherInput) {
       otherInput.addEventListener('input', function() {
@@ -370,7 +352,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         var hint = document.getElementById('otherHint');
         if (val.length < 2) { hint.textContent = ''; hint.className = 'other-subject-hint'; return; }
 
-        // Check against existing subjects in the list (client-side)
         var existing = <?php echo json_encode(array_map(function($s) {
           return strtolower($s['subject_name']);
         }, $all_subjects)); ?>;
@@ -385,7 +366,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       });
     }
 
-    // Show/hide password
     function makeToggle(btnId, inputId) {
       var btn = document.getElementById(btnId);
       var inp = document.getElementById(inputId);
