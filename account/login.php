@@ -2,7 +2,6 @@
 session_start();
 require_once '../classes/peer_tutoring_trackerDB.php';
 
-// Already logged in — send to correct dashboard
 if (isset($_SESSION['user_id'])) {
     if ($_SESSION['user_role'] == 'admin') {
         header("Location: ../admin/dashboard.php");
