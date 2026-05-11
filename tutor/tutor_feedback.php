@@ -32,9 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $_POST['action'] == 'respond') {
         if ($check->rowCount() == 0) {
             $error = "Invalid feedback.";
         } else {
-            // We store the response in the comments column prefixed — or
-            // add a tutor_response column if you prefer. Here we use a
-            // separate update on a tutor_response column.
             $stmt = $conn->prepare("UPDATE feedback SET tutor_response = ? WHERE feedback_id = ?");
             $stmt->execute([$response, $feedback_id]);
             $success = "Response submitted.";
@@ -44,7 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $_POST['action'] == 'respond') {
 
 //Overall average rating
 $stmt = $conn->prepare("
-    SELECT ROUND(AVG(f.rating), 1) as avg_rating, COUNT(f.feedback_id) as total_reviews
+    SELECT 
+    AVG(f.rating) AS avg_rating,
+    COUNT(f.feedback_id) AS total_reviews
     FROM feedback f
     JOIN sessions s ON f.session_id = s.session_id
     WHERE s.tutor_id = ?
