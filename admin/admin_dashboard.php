@@ -35,14 +35,15 @@ $total_subjects = $stmt->fetch()['total'];
 
 //Sessions per month (last 6)
 $stmt = $conn->query("
-    SELECT DATE_FORMAT(session_date, '%b') as month,
-           DATE_FORMAT(session_date, '%Y-%m') as month_key,
-           COUNT(*) as total,
-           SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+    SELECT 
+    DATE_FORMAT(session_date, '%b') AS month,
+    DATE_FORMAT(session_date, '%Y-%m') AS month_key,
+    COUNT(*) AS total,
+    SUM(status = 'completed') AS completed
     FROM sessions
     WHERE session_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
     GROUP BY month_key, month
-    ORDER BY month_key ASC
+    ORDER BY month_key ASC;
 ");
 $monthly = $stmt->fetchAll();
 $chart_labels    = [];
