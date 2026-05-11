@@ -35,8 +35,11 @@ $total_hours   = round($total_minutes / 60, 1);
 
 // Average rating
 $stmt = $conn->prepare("
-    SELECT ROUND(AVG(f.rating), 1) as avg_rating, COUNT(f.feedback_id) as total_reviews
-    FROM feedback f JOIN sessions s ON f.session_id = s.session_id
+    SELECT 
+    AVG(f.rating) AS avg_rating,
+    COUNT(f.feedback_id) AS total_reviews
+    FROM feedback f
+    JOIN sessions s ON f.session_id = s.session_id
     WHERE s.tutor_id = ?
 ");
 $stmt->execute([$user_id]);
@@ -95,7 +98,8 @@ if ($total_reviews > 0) {
 //Upcoming sessions (next 3)
 $stmt = $conn->prepare("
     SELECT s.session_date, s.duration, CONCAT(u.first_name, ' ', u.last_name) as student_name
-    FROM sessions s JOIN users u ON s.student_id = u.user_id
+    FROM sessions s 
+    JOIN users u ON s.student_id = u.user_id
     WHERE s.tutor_id = ? AND s.status = 'scheduled' AND s.session_date >= NOW()
     ORDER BY s.session_date ASC LIMIT 3
 ");
@@ -105,7 +109,8 @@ $upcoming_sessions = $stmt->fetchAll();
 //Recent activity (last 5)
 $stmt = $conn->prepare("
     SELECT s.session_date, s.duration, s.status, CONCAT(u.first_name, ' ', u.last_name) as student_name
-    FROM sessions s JOIN users u ON s.student_id = u.user_id
+    FROM sessions s 
+    JOIN users u ON s.student_id = u.user_id
     WHERE s.tutor_id = ?
     ORDER BY s.session_date DESC LIMIT 5
 ");
@@ -422,7 +427,6 @@ function status_badge($status) {
 });
   </script>
 </body>
- <!-- Logout confirm modal -->
 <div class="modal-overlay" id="logoutModal">
   <div class="modal">
     <div class="modal-header">
