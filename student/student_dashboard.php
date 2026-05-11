@@ -32,17 +32,17 @@ $total_hours   = round($total_minutes / 60, 1);
 // Attendance rate
 $attendance_rate = $total_sessions > 0 ? round(($completed_sessions / $total_sessions) * 100) : 0;
 
-//Sessions per month (last 6 months) for bar chart
+//Sessions per month (last 6 months)
 $stmt = $conn->prepare("
-    SELECT DATE_FORMAT(session_date, '%b') as month,
-           DATE_FORMAT(session_date, '%Y-%m') as month_key,
-           COUNT(*) as total,
-           SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-    FROM sessions
+    SELECT 
+    DATE_FORMAT(session_date, '%b') AS month,
+    DATE_FORMAT(session_date, '%Y-%m') AS month_key,
+    COUNT(*) AS total,
+    SUM(status = 'completed') AS completed FROM sessions
     WHERE student_id = ?
-      AND session_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    AND session_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
     GROUP BY month_key, month
-    ORDER BY month_key ASC
+    ORDER BY month_key ASC;
 ");
 $stmt->execute([$user_id]);
 $monthly_data = $stmt->fetchAll();
