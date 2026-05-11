@@ -95,14 +95,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $mail = new PHPMailer(true);
             try {
                 $mail->isSMTP();
-                $mail->Host       = 'smtp.gmail.com';
+                $mail->Host       = '';
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'peerturoring@gmail.com'; 
-                $mail->Password   = 'pcdslgglcturvuwj';   
+                $mail->Username   = ''; 
+                $mail->Password   = '';   
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
-                $mail->setFrom('your_email@gmail.com', 'Peer Tutoring Tracker');
+                $mail->setFrom('your_email@gmail.com', 'Peer Tutoring Tacker');
                 $mail->addAddress($email, $full_name);
                 $mail->isHTML(true);
                 $mail->Subject = 'Verify Your Email — Peer Tutoring Tracker';
