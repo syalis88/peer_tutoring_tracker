@@ -24,15 +24,17 @@ if ($search != '') {
 }
 
 $stmt = $conn->prepare("
-    SELECT u.user_id, CONCAT(u.first_name, ' ', u.last_name) as name, u.year_level,
-           COUNT(s.session_id) as total_sessions,
-           SUM(CASE WHEN s.status = 'completed' THEN 1 ELSE 0 END) as completed,
-           MAX(s.session_date) as last_session
+    SELECT u.user_id,
+    CONCAT(u.first_name, ' ', u.last_name) AS name,
+    u.year_level,
+    COUNT(s.session_id) AS total_sessions,
+    SUM(s.status = 'completed') AS completed,
+    MAX(s.session_date) AS last_session
     FROM sessions s
     JOIN users u ON s.student_id = u.user_id
     $where
     GROUP BY u.user_id, u.first_name, u.last_name, u.year_level
-    ORDER BY last_session DESC
+    ORDER BY last_session DESC;
 ");
 
 $stmt->execute($params);
