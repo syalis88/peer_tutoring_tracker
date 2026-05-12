@@ -32,25 +32,48 @@ if ($report == 'session_summary') {
     }
 
     $stmt = $conn->prepare("
-        WITH tutor_sessions AS (
+       SELECT ts.*,
+    IFNULL(tr.avg_rating, 0) AS avg_rating,
+    IFNULL(tr.total_reviews, 0) AS total_reviews,
+    IF(
+        ts.total_sessions > 0,
+        ROUND((ts.completed_sessions / ts.total_sessions) * 100, 1),
+        0
+    ) AS completion_rate
+FROM (
     SELECT
         u.user_id,
         CONCAT(u.first_name, ' ', u.last_name) AS tutor_name,
-
         COUNT(s.session_id) AS total_sessions,
-
         SUM(s.status = 'completed') AS completed_sessions,
         SUM(s.status = 'cancelled') AS cancelled_sessions,
         SUM(s.status = 'scheduled') AS scheduled_sessions,
-
-        SUM(s.status = 'completed' * s.duration) / 60 AS hours_taught,
-
+        ROUND(
+            SUM(s.status = 'completed' * s.duration) / 60,
+            1
+        ) AS hours_taught,
         COUNT(DISTINCT s.student_id) AS unique_students
-
     FROM users u
-    LEFT JOIN sessions s ON s.tutor_id = u.user_id
+    LEFT JOIN sessions s
+        ON s.tutor_id = u.user_id
+        $date_where
     WHERE u.role = 'tutor'
     GROUP BY u.user_id
+) ts
+LEFT JOIN (
+    SELECT
+        s.tutor_id,
+        ROUND(AVG(f.rating), 2) AS avg_rating,
+        COUNT(f.feedback_id) AS total_reviews
+    FROM feedback f
+    JOIN sessions s
+        ON f.session_id = s.session_id
+    WHERE f.rating IS NOT NULL
+    GROUP BY s.tutor_id
+) tr
+ON tr.tutor_id = ts.user_id
+ORDER BY ts.completed_sessions DESC,
+         ts.total_sessions DESC
 ),
 
 tutor_ratings AS (
