@@ -49,9 +49,14 @@ $total_reviews = $rating_row['total_reviews'] ?? 0;
 
 // Pending feedback (unresponded)
 $stmt = $conn->prepare("
-    SELECT COUNT(*) as total FROM feedback f
-    JOIN sessions s ON f.session_id = s.session_id
-    WHERE s.tutor_id = ? AND f.tutor_response IS NULL
+    SELECT COUNT(*) as total
+    FROM feedback
+    WHERE tutor_response IS NULL
+      AND session_id IN (
+          SELECT session_id
+          FROM sessions
+          WHERE tutor_id = ?
+      )
 ");
 $stmt->execute([$user_id]);
 $pending_feedback = $stmt->fetch()['total'];
